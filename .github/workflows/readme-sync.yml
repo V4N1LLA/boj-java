@@ -16,67 +16,38 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Generate problem table and update README
-        id: gen
+      - name: Build problem table (to temp file)
+        id: table
         shell: bash
         run: |
           set -euo pipefail
-
           ROOT="src/main/java/boj"
-
-          # p숫자 디렉터리만 수집 → 숫자만 추출 후 정렬
           mapfile -t LIST < <(
             find "$ROOT" -maxdepth 1 -type d -regex '.*/p[0-9]+' -printf '%f\n' \
             | sed 's/^p//' | sort -n
           )
-
-          # 테이블 생성
           TABLE="| 번호 | 링크 | 메모 |\n|---:|:---|:---|\n"
           for N in "${LIST[@]:-}"; do
             TABLE+="| ${N} | [문제](https://www.acmicpc.net/problem/${N}) |  |\n"
           done
+          # 임시 파일에 표 저장
+          echo -e "$TABLE" > "$RUNNER_TEMP/problem_table.md"
+          echo "table_path=$RUNNER_TEMP/problem_table.md" >> "$GITHUB_OUTPUT"
 
-          # Python으로 마커 사이만 치환 (환경변수로 테이블 전달)
-          RESULT=$(TABLE="$TABLE" python3 - << 'PY'
-  import os, re, sys, io
-  
-  tbl = os.environ.get("TABLE", "")
-with io.open("README.md", "r", encoding="utf-8", newline="") as f:
-  text = f.read()
-  
-  pattern = re.compile(r'<!-- PROBLEM_TABLE:START -->.*?<!-- PROBLEM_TABLE:END -->', re.S)
-if not re.search(pattern, text):
-  print("MISSING_MARKERS")
-  sys.exit(0)
-  
-  replacement = "<!-- PROBLEM_TABLE:START -->\n" + tbl + "<!-- PROBLEM_TABLE:END -->"
-  new_text = re.sub(pattern, replacement, text)
+      - name: Update README (replace marker block only)
+        id: update
+        shell: bash
+        run: |
+          set -euo pipefail
+          RESULT=$(python3 scripts/update_readme.py < "${{ steps.table.outputs.table_path }}")
+          echo "result=$RESULT" >> "$GITHUB_OUTPUT"
+          echo "Python said: $RESULT"
 
-if new_text != text:
-  with io.open("README.md", "w", encoding="utf-8", newline="") as f:
-    f.write(new_text)
-  print("UPDATED")
-else:
-  print("NOCHANGE")
-  PY
-  )
-
-echo "Python said: ${RESULT}"
-  
-  if [ "${RESULT}" = "UPDATED" ]; then
-  echo "updated=true" >> "$GITHUB_OUTPUT"
-  elif [ "${RESULT}" = "NOCHANGE" ]; then
-  echo "updated=false" >> "$GITHUB_OUTPUT"
-  else
-  echo "::error::README.md에 PROBLEM_TABLE 마커가 없습니다."
-  exit 1
-  fi
-
-- name: Commit & push if changed
-  if: steps.gen.outputs.updated == 'true'
-  run: |
-    git config user.name "github-actions[bot]"
-    git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-    git add README.md
-    git commit -m ":memo: docs(readme): 문제 목록 자동 동기화 [skip ci]"
-    git push
+      - name: Commit & push if changed
+        if: steps.update.outputs.result == 'UPDATED'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m ":memo: docs(readme): 문제 목록 자동 동기화 [skip ci]"
+          git push
