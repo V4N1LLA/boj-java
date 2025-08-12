@@ -47,7 +47,7 @@ scripts/new-prob.sh 1260
 
 ## 📚 문서 맵
 - **템플릿**
-  - [Java 입출력 템플릿](templates/java-io-template.md)
+  - [Java 입출력 템플릿](snippets/java-io-template.md)
 - **알고리즘**
   - [시간 복잡도](algorithms/time-complexity.md)
   - [이분 탐색](algorithms/binary-search.md)
