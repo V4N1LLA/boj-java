@@ -1,19 +1,25 @@
-# Gradle / Build
+# --- OS / editors ---
+.DS_Store
+Thumbs.db
+.vscode/
+
+# --- IntelliJ IDEA ---
+.idea/
+*.iml
+
+# --- Gradle / build outputs ---
 .gradle/
 build/
 out/
 
-# IntelliJ
-.idea/
-*.iml
-
-# Wrapper (추적 O)
-!gradle/wrapper/gradle-wrapper.jar
-
-# OS / Editors
-.DS_Store
-.vscode/
-
-# Class / Temp / Local inputs
+# --- Java compiled ---
 *.class
+*.log
+hs_err_pid*
+
+# --- BOJ local inputs (예제 테스트 전용) ---
 **/input.txt
+
+# --- Keep Gradle wrapper (반드시 커밋) ---
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
