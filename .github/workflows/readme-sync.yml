@@ -1,0 +1,59 @@
+name: readme-sync
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "src/main/java/boj/**"
+      - ".github/workflows/readme-sync.yml"
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # GITHUB_TOKEN으로 커밋/푸시 허용
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate problem table
+        id: gen
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ROOT="src/main/java/boj"
+          # p숫자 디렉터리만 찾기
+          mapfile -t LIST < <(find "$ROOT" -maxdepth 1 -type d -name 'p*[0-9]' -printf '%f\n' | sed 's/^p//' | sort -n)
+
+          # 테이블 머리
+          TABLE="| 번호 | 링크 | 메모 |\n|---:|:---|:---|\n"
+          for N in "${LIST[@]}"; do
+            TABLE+="| ${N} | [문제](https://www.acmicpc.net/problem/${N}) |  |\n"
+          done
+
+          # 마커 사이 교체
+          awk -v RS='' -v ORS='' -v tbl="$TABLE" '
+            {
+              gsub(/<!-- PROBLEM_TABLE:START -->.*<!-- PROBLEM_TABLE:END -->/,
+                   "<!-- PROBLEM_TABLE:START -->\n" tbl "<!-- PROBLEM_TABLE:END -->", $0)
+              print
+            }
+          ' README.md > README.md.tmp
+
+          # 변경 확인
+          if ! diff -q README.md README.md.tmp >/dev/null 2>&1; then
+            mv README.md.tmp README.md
+            echo "updated=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No changes."
+          fi
+
+      - name: Commit & push if changed
+        if: steps.gen.outputs.updated == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m ":memo: docs(readme): 문제 목록 자동 동기화 [skip ci]"
+          git push
