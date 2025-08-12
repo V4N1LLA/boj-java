@@ -27,7 +27,7 @@ jobs:
         id: gen
         run: |
           python - <<'PY'
-          import glob, re, pathlib, sys, io
+          import glob, re, pathlib, sys, io, os
 
           # 수집
           nums = []
