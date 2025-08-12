@@ -1,11 +1,21 @@
 site_name: BOJ Java Notes
+site_url: https://v4n1lla.github.io/boj-java/
+site_description: 백준 / solved.ac 기반 Java 코딩테스트 준비 기록
+site_author: V4N1LLA
+repo_url: https://github.com/V4N1LLA/boj-java
+repo_name: V4N1LLA/boj-java
+edit_uri: edit/main/docs/
+
 theme:
   name: material
   language: ko
   features:
     - navigation.instant
     - navigation.sections
+    - navigation.top
     - content.code.copy
+    - content.action.edit
+    - content.action.view
   palette:
     - scheme: slate
       primary: blue
@@ -23,11 +33,20 @@ nav:
   - 문제 메모:
       - BOJ 1920: problems/01920.md
 
+plugins:
+  - search
+  - sitemap:
+      changefreq: daily
+      priority: 0.5
+  - git-revision-date-localized:
+      fallback_to_build_date: true
+  - minify:
+      minify_html: true
+
 markdown_extensions:
   - admonition
   - footnotes
   - toc:
       permalink: true
-  - codehilite
   - pymdownx.details
   - pymdownx.superfences
