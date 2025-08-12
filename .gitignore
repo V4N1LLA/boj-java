@@ -1,25 +1,21 @@
-# --- OS / editors ---
-.DS_Store
-Thumbs.db
-.vscode/
-
-# --- IntelliJ IDEA ---
-.idea/
-*.iml
-
-# --- Gradle / build outputs ---
+# Gradle / Build
 .gradle/
 build/
 out/
 
-# --- Java compiled ---
-*.class
-*.log
-hs_err_pid*
+# IntelliJ / IDEA
+.idea/
+*.iml
 
-# --- BOJ local inputs (예제 테스트 전용) ---
+# OS
+.DS_Store
+Thumbs.db
+
+# BOJ local input (do not commit)
 **/input.txt
 
-# --- Keep Gradle wrapper (반드시 커밋) ---
+# Keep wrappers tracked
 !gradle/wrapper/gradle-wrapper.jar
 !gradle/wrapper/gradle-wrapper.properties
+!gradlew
+!gradlew.bat
