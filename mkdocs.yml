@@ -33,7 +33,7 @@ nav:
   - 문제 메모:
       - BOJ 1920: problems/01920.md
 
-pplugins:
+plugins:
   - search
   - sitemap
   - git-revision-date-localized:
