@@ -25,7 +25,7 @@ nav:
   - 소개: index.md
   - 학습 계획: study-plan.md
   - 템플릿:
-      - Java 입출력 템플릿: templates/java-io-template.md
+      - Java 입출력 템플릿: snippets/java-io-template.md
   - 알고리즘:
       - 시간 복잡도: algorithms/time-complexity.md
       - 이분 탐색: algorithms/binary-search.md
