@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# 1) input.txt 커밋 금지
+if git diff --cached --name-only | grep -Eq '^src/main/java/boj/p[0-9]+/input\.txt$'; then
+  echo "❌ src/.../input.txt 는 커밋 금지 (로컬 테스트 전용)"
+  exit 1
+fi
+
+# 2) 빠른 컴파일 체크
+if [[ -x ./gradlew ]]; then
+  ./gradlew -q classes
+fi
