@@ -1,4 +1,5 @@
 name: docs
+
 on:
   push:
     branches: [ "main" ]
@@ -12,15 +13,30 @@ permissions:
   pages: write
   id-token: write
 
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
 jobs:
-  build-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: '3.x' }
-      - run: pip install mkdocs-material
+      - uses: actions/configure-pages@v5
+        with: { static_site_generator: mkdocs }
+      - run: pip install mkdocs-material mkdocs-git-revision-date-localized-plugin mkdocs-minify-plugin
       - run: mkdocs build --strict
       - uses: actions/upload-pages-artifact@v3
         with: { path: 'site' }
-      - uses: actions/deploy-pages@v4
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
