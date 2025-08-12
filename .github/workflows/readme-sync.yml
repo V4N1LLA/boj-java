@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Generate problem table
+      - name: Generate problem table and update README
         id: gen
         shell: bash
         run: |
@@ -36,28 +36,47 @@ jobs:
             TABLE+="| ${N} | [문제](https://www.acmicpc.net/problem/${N}) |  |\n"
           done
 
-          # 마커 사이만 교체 (기존 포맷/줄바꿈 보존)
-          awk -v tbl="$TABLE" '
-            BEGIN { in=0 }
-            /<!-- PROBLEM_TABLE:START -->/ { print; print tbl; in=1; next }
-            /<!-- PROBLEM_TABLE:END -->/   { in=0; print; next }
-            !in { print }
-          ' README.md > README.md.tmp
+          # Python으로 마커 사이만 치환 (환경변수로 테이블 전달)
+          RESULT=$(TABLE="$TABLE" python3 - << 'PY'
+  import os, re, sys, io
+  
+  tbl = os.environ.get("TABLE", "")
+with io.open("README.md", "r", encoding="utf-8", newline="") as f:
+  text = f.read()
+  
+  pattern = re.compile(r'<!-- PROBLEM_TABLE:START -->.*?<!-- PROBLEM_TABLE:END -->', re.S)
+if not re.search(pattern, text):
+  print("MISSING_MARKERS")
+  sys.exit(0)
+  
+  replacement = "<!-- PROBLEM_TABLE:START -->\n" + tbl + "<!-- PROBLEM_TABLE:END -->"
+  new_text = re.sub(pattern, replacement, text)
 
-          if ! diff -q README.md README.md.tmp >/dev/null 2>&1; then
-            mv README.md.tmp README.md
-            echo "updated=true" >> "$GITHUB_OUTPUT"
-          else
-            rm -f README.md.tmp
-            echo "updated=false" >> "$GITHUB_OUTPUT"
-            echo "No changes."
-          fi
+if new_text != text:
+  with io.open("README.md", "w", encoding="utf-8", newline="") as f:
+    f.write(new_text)
+  print("UPDATED")
+else:
+  print("NOCHANGE")
+  PY
+  )
 
-      - name: Commit & push if changed
-        if: steps.gen.outputs.updated == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md
-          git commit -m ":memo: docs(readme): 문제 목록 자동 동기화 [skip ci]"
-          git push
+echo "Python said: ${RESULT}"
+  
+  if [ "${RESULT}" = "UPDATED" ]; then
+  echo "updated=true" >> "$GITHUB_OUTPUT"
+  elif [ "${RESULT}" = "NOCHANGE" ]; then
+  echo "updated=false" >> "$GITHUB_OUTPUT"
+  else
+  echo "::error::README.md에 PROBLEM_TABLE 마커가 없습니다."
+  exit 1
+  fi
+
+- name: Commit & push if changed
+  if: steps.gen.outputs.updated == 'true'
+  run: |
+    git config user.name "github-actions[bot]"
+    git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+    git add README.md
+    git commit -m ":memo: docs(readme): 문제 목록 자동 동기화 [skip ci]"
+    git push
