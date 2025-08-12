@@ -1,4 +1,4 @@
-name: readme-sync
+name: "🧾 README/NAV 동기화"
 
 on:
   push:
@@ -6,6 +6,8 @@ on:
     paths:
       - "src/main/java/boj/**"
       - ".github/workflows/readme-sync.yml"
+      - "docs/problems/**"
+      - "mkdocs.yml"
   workflow_dispatch: {}
 
 jobs:
@@ -16,38 +18,80 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build problem table (to temp file)
-        id: table
-        shell: bash
-        run: |
-          set -euo pipefail
-          ROOT="src/main/java/boj"
-          mapfile -t LIST < <(
-            find "$ROOT" -maxdepth 1 -type d -regex '.*/p[0-9]+' -printf '%f\n' \
-            | sed 's/^p//' | sort -n
-          )
-          TABLE="| 번호 | 링크 | 메모 |\n|---:|:---|:---|\n"
-          for N in "${LIST[@]:-}"; do
-            TABLE+="| ${N} | [문제](https://www.acmicpc.net/problem/${N}) |  |\n"
-          done
-          # 임시 파일에 표 저장
-          echo -e "$TABLE" > "$RUNNER_TEMP/problem_table.md"
-          echo "table_path=$RUNNER_TEMP/problem_table.md" >> "$GITHUB_OUTPUT"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
 
-      - name: Update README (replace marker block only)
-        id: update
-        shell: bash
+      - name: Generate problem table & update mkdocs nav
+        id: gen
         run: |
-          set -euo pipefail
-          RESULT=$(python3 scripts/update_readme.py < "${{ steps.table.outputs.table_path }}")
+          python - <<'PY'
+          import glob, re, pathlib, sys, io
+
+          # 수집
+          nums = []
+          for p in glob.glob("src/main/java/boj/p[0-9]*"):
+              m = re.search(r"p(\d+)$", p)
+              if m: nums.append(int(m.group(1)))
+          nums = sorted(set(nums))
+
+          # 표 생성 (코드/문서 링크, 5자리 패딩)
+          rows = ["| 번호 | 링크 | 메모 |", "|---:|:---|:---|"]
+          for n in nums:
+              pad = f"{n:05d}"
+              code = f"src/main/java/boj/p{n}/Main.java"
+              doc_md = pathlib.Path(f"docs/problems/{pad}.md")
+              links = []
+              if doc_md.exists():
+                  links.append(f"[문서](https://v4n1lla.github.io/boj-java/problems/{pad}/)")
+              links.append(f"[코드]({code})")
+              rows.append(f"| {pad} | {' / '.join(links)} |  |")
+          table = "\n".join(rows) + "\n"
+          pathlib.Path("problem_table.md").write_text(table, encoding="utf-8")
+
+          # mkdocs.yml NAV 자동 치환
+          mk = pathlib.Path("mkdocs.yml").read_text(encoding="utf-8")
+          start = "# PROBLEM_NAV:START"
+          end   = "# PROBLEM_NAV:END"
+          import re
+          pat = re.compile(rf"({re.escape(start)})(.*?)({re.escape(end)})", re.S)
+
+          # 문서가 존재하는 문제만 NAV 라인 생성
+          nav_lines = []
+          for n in nums:
+              pad = f"{n:05d}"
+              if pathlib.Path(f"docs/problems/{pad}.md").exists():
+                  nav_lines.append(f"      - BOJ {pad}: problems/{pad}.md")
+          if not nav_lines:
+              nav_lines = ["      # (문서 스텁이 없습니다)"]
+
+          if pat.search(mk):
+              block = "\n".join([start] + nav_lines + [end])
+              mk2 = pat.sub(block, mk)
+              if mk2 != mk:
+                  pathlib.Path("mkdocs.yml").write_text(mk2, encoding="utf-8")
+                  print("NAV_UPDATED")
+
+          # 출력 파일 경로를 GITHUB_OUTPUT로 전달
+          with open(os.environ["GITHUB_OUTPUT"], "a") as gh:
+              gh.write(f"table_path=problem_table.md\n")
+          PY
+
+      - name: Update README (marker replace)
+        id: upd
+        run: |
+          RESULT=$(python3 scripts/update_readme.py < "${{ steps.gen.outputs.table_path }}")
           echo "result=$RESULT" >> "$GITHUB_OUTPUT"
           echo "Python said: $RESULT"
 
       - name: Commit & push if changed
-        if: steps.update.outputs.result == 'UPDATED'
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md
-          git commit -m ":memo: docs(readme): 문제 목록 자동 동기화 [skip ci]"
-          git push
+          if ! git diff --quiet; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add README.md mkdocs.yml problem_table.md || true
+            git commit -m ":memo: docs(readme): 문제 표 & NAV 자동 동기화 [skip ci]"
+            git push
+          else
+            echo "No changes."
