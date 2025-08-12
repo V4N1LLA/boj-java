@@ -18,3 +18,4 @@ static boolean binarySearch(int[] a, int x) {
   }
   return false;
 }
+```

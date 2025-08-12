@@ -1,12 +1,14 @@
-``````
+# Java 입출력 템플릿
+
+```java
 import java.io.*;
 import java.util.*;
 
 public class Main {
-public static void main(String[] args) throws Exception {
-BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-StringBuilder sb = new StringBuilder();
-StringTokenizer st;
+    public static void main(String[] args) throws Exception {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        StringBuilder sb = new StringBuilder();
+        StringTokenizer st;
 
         int n = Integer.parseInt(br.readLine());
         st = new StringTokenizer(br.readLine());
@@ -22,3 +24,4 @@ StringTokenizer st;
         System.out.print(sb);
     }
 }
+```
