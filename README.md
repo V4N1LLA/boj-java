@@ -42,7 +42,10 @@ src/main/java/boj
 
 ## 📊 진행 현황
 <!-- PROBLEM_TABLE:START -->
-(이 줄과 아래 내용은 GitHub Actions가 자동으로 채웁니다)
+| 번호 | 링크 | 메모 |
+|---:|:---|:---|
+| 1920 | [문제](https://www.acmicpc.net/problem/1920) |  |
+
 <!-- PROBLEM_TABLE:END -->
 
 
