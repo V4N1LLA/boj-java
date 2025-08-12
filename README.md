@@ -2,8 +2,8 @@
 
 백준(BOJ) & solved.ac 문제 풀이 저장소 – Java 17 기반
 
-![ci](https://github.com/<USER>/boj-java/actions/workflows/ci.yml/badge.svg)
-![readme-sync](https://github.com/<USER>/boj-java/actions/workflows/readme-sync.yml/badge.svg)
+![ci](https://github.com/v4n1lla/boj-java/actions/workflows/ci.yml/badge.svg)
+![readme-sync](https://github.com/v4n1lla/boj-java/actions/workflows/readme-sync.yml/badge.svg)
 
 ## 📌 소개
 - **언어**: Java 17
