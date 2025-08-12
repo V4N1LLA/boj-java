@@ -12,7 +12,7 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # GITHUB_TOKEN으로 커밋/푸시 허용
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -23,29 +23,33 @@ jobs:
           set -euo pipefail
 
           ROOT="src/main/java/boj"
-          # p숫자 디렉터리만 찾기
-          mapfile -t LIST < <(find "$ROOT" -maxdepth 1 -type d -name 'p*[0-9]' -printf '%f\n' | sed 's/^p//' | sort -n)
 
-          # 테이블 머리
+          # p숫자 디렉터리만 수집 → 숫자만 추출 후 정렬
+          mapfile -t LIST < <(
+            find "$ROOT" -maxdepth 1 -type d -regex '.*/p[0-9]+' -printf '%f\n' \
+            | sed 's/^p//' | sort -n
+          )
+
+          # 테이블 생성
           TABLE="| 번호 | 링크 | 메모 |\n|---:|:---|:---|\n"
-          for N in "${LIST[@]}"; do
+          for N in "${LIST[@]:-}"; do
             TABLE+="| ${N} | [문제](https://www.acmicpc.net/problem/${N}) |  |\n"
           done
 
-          # 마커 사이 교체
-          awk -v RS='' -v ORS='' -v tbl="$TABLE" '
-            {
-              gsub(/<!-- PROBLEM_TABLE:START -->.*<!-- PROBLEM_TABLE:END -->/,
-                   "<!-- PROBLEM_TABLE:START -->\n" tbl "<!-- PROBLEM_TABLE:END -->", $0)
-              print
-            }
+          # 마커 사이만 교체 (기존 포맷/줄바꿈 보존)
+          awk -v tbl="$TABLE" '
+            BEGIN { in=0 }
+            /<!-- PROBLEM_TABLE:START -->/ { print; print tbl; in=1; next }
+            /<!-- PROBLEM_TABLE:END -->/   { in=0; print; next }
+            !in { print }
           ' README.md > README.md.tmp
 
-          # 변경 확인
           if ! diff -q README.md README.md.tmp >/dev/null 2>&1; then
             mv README.md.tmp README.md
             echo "updated=true" >> "$GITHUB_OUTPUT"
           else
+            rm -f README.md.tmp
+            echo "updated=false" >> "$GITHUB_OUTPUT"
             echo "No changes."
           fi
 
