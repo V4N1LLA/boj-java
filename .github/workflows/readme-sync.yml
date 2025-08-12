@@ -87,11 +87,24 @@ jobs:
 
       - name: Commit & push if changed
         run: |
+          set -euo pipefail
+
+          # 작업 트리에 변경이 있나?
           if ! git diff --quiet; then
             git config user.name  "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+            # 우리가 관리하는 파일만 추가
             git add README.md mkdocs.yml problem_table.md || true
+
+            # 스테이징된 차이가 없으면 커밋하지 않음
+            if git diff --cached --quiet; then
+              echo "No staged changes for README.md / mkdocs.yml / problem_table.md"
+              exit 0
+            fi
+
             git commit -m ":memo: docs(readme): 문제 표 & NAV 자동 동기화 [skip ci]"
             git push
           else
             echo "No changes."
+          fi
