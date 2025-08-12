@@ -4,7 +4,8 @@
 
 [![ci](https://github.com/v4n1lla/boj-java/actions/workflows/ci.yml/badge.svg)](https://github.com/v4n1lla/boj-java/actions/workflows/ci.yml)
 [![readme-sync](https://github.com/v4n1lla/boj-java/actions/workflows/readme-sync.yml/badge.svg)](https://github.com/v4n1lla/boj-java/actions/workflows/readme-sync.yml)
-[![docs](https://github.com/v4n1lla/boj-java/actions/workflows/pages.yml/badge.svg)](https://v4n1lla.github.io/boj-java)
+[![docs](https://github.com/V4N1LLA/boj-java/actions/workflows/pages.yml/badge.svg?branch=main&event=push)](https://github.com/V4N1LLA/boj-java/actions/workflows/pages.yml)
+
 
 ---
 
