@@ -1,0 +1,19 @@
+# Gradle / Build
+.gradle/
+build/
+out/
+
+# IntelliJ
+.idea/
+*.iml
+
+# Wrapper (추적 O)
+!gradle/wrapper/gradle-wrapper.jar
+
+# OS / Editors
+.DS_Store
+.vscode/
+
+# Class / Temp / Local inputs
+*.class
+**/input.txt
