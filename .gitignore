@@ -1,21 +1,20 @@
-# Gradle / Build
+# IntelliJ / IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Local inputs
+src/main/java/boj/p*/input.txt
+
+# Gradle
 .gradle/
 build/
 out/
 
-# IntelliJ / IDEA
-.idea/
-*.iml
+# Logs
+*.log
 
-# OS
+# OS / Misc
 .DS_Store
 Thumbs.db
-
-# BOJ local input (do not commit)
-**/input.txt
-
-# Keep wrappers tracked
-!gradle/wrapper/gradle-wrapper.jar
-!gradle/wrapper/gradle-wrapper.properties
-!gradlew
-!gradlew.bat
