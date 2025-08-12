@@ -1,6 +1,6 @@
 # Java 입출력 템플릿
 
-```java
+```java 
 import java.io.*;
 import java.util.*;
 
