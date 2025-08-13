@@ -1,8 +1,17 @@
 name: "🛠️ Java Build & Test"
+
 on:
   push:
     branches: [ "main" ]
   pull_request:
+
+permissions:
+  contents: read
+
+# 동일 브랜치에서 중복 실행 방지
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -20,5 +29,11 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Gradle build (classes only)
-        run: ./gradlew -q classes
+      # build.gradle에 등록된 ciQuick(= classes) 실행. 없으면 classes로 대체
+      - name: Gradle build (fast)
+        run: |
+          if ./gradlew tasks --all | grep -q "^ciQuick"; then
+            ./gradlew -q ciQuick
+          else
+            ./gradlew -q classes
+          fi
