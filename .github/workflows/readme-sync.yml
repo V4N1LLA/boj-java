@@ -86,25 +86,38 @@ jobs:
           echo "Python said: $RESULT"
 
       - name: Commit & push if changed
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
           set -euo pipefail
 
-          # 작업 트리에 변경이 있나?
-          if ! git diff --quiet; then
-            git config user.name  "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-            # 우리가 관리하는 파일만 추가
-            git add README.md mkdocs.yml problem_table.md || true
-
-            # 스테이징된 차이가 없으면 커밋하지 않음
-            if git diff --cached --quiet; then
-              echo "No staged changes for README.md / mkdocs.yml / problem_table.md"
-              exit 0
-            fi
-
-            git commit -m ":memo: docs(readme): 문제 표 & NAV 자동 동기화 [skip ci]"
-            git push
-          else
-            echo "No changes."
+          # 변경 없으면 종료
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No changes."; exit 0
           fi
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # 최신 원격 반영 후 스테이징
+          git fetch origin "$REF_NAME"
+          git rebase "origin/$REF_NAME" || git rebase --abort
+
+          git add README.md mkdocs.yml problem_table.md || true
+          if git diff --cached --quiet; then
+            echo "No staged changes for target files."; exit 0
+          fi
+
+          # 푸시 재시도(경합 대비)
+          for i in 1 2 3; do
+            if git push origin "HEAD:$REF_NAME"; then
+              echo "Pushed."; exit 0
+            fi
+            echo "Push failed (#$i). Rebasing and retrying..."
+            git fetch origin "$REF_NAME"
+            git rebase "origin/$REF_NAME" || git rebase --abort
+            sleep 2
+          done
+
+          echo "❌ Push still failing after retries."
+          exit 1
