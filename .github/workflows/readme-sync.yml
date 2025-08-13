@@ -1,4 +1,4 @@
-name: "🧾 README/NAV 동기화"
+name: "🔄 README Stats Sync"
 
 on:
   push:

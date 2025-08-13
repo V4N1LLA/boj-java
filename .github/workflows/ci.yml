@@ -1,4 +1,4 @@
-name: ci
+name: "🛠️ Java Build & Test"
 on:
   push:
     branches: [ "main" ]
