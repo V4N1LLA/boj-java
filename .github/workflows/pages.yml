@@ -13,8 +13,9 @@ permissions:
   pages: write
   id-token: write
 
+# Pages 배포는 겹치면 하나만
 concurrency:
-  group: "pages"
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -22,11 +23,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - uses: actions/setup-python@v5
         with: { python-version: '3.x' }
-      - run: pip install -U mkdocs mkdocs-material mkdocs-git-revision-date-localized-plugin mkdocs-minify-plugin
-      - run: mkdocs --version
-      - run: mkdocs build --strict
+
+      - name: Install mkdocs toolchain
+        run: |
+          pip install -U \
+            mkdocs \
+            mkdocs-material \
+            mkdocs-git-revision-date-localized-plugin \
+            mkdocs-minify-plugin
+
+      - name: Show versions
+        run: mkdocs --version
+
+      - name: Build site (strict)
+        run: mkdocs build --strict
+
       - uses: actions/upload-pages-artifact@v3
         with: { path: 'site' }
 
