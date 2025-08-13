@@ -10,13 +10,21 @@ on:
       - "mkdocs.yml"
   workflow_dispatch: {}
 
+permissions:
+  contents: write
+
+# 같은 브랜치에서 동시에 돌면 경합 → 취소/단일화
+concurrency:
+  group: readme-sync-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   sync:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -27,55 +35,54 @@ jobs:
         id: gen
         run: |
           python - <<'PY'
-          import glob, re, pathlib, sys, io, os
+          import glob, re, pathlib, io, os
 
-          # 수집
+          # 문제 번호 수집
           nums = []
           for p in glob.glob("src/main/java/boj/p[0-9]*"):
-              m = re.search(r"p(\d+)$", p)
-              if m: nums.append(int(m.group(1)))
+            m = re.search(r"p(\d+)$", p)
+            if m: nums.append(int(m.group(1)))
           nums = sorted(set(nums))
 
-          # 표 생성 (코드/문서 링크, 5자리 패딩)
+          # README 표 생성 (문서 링크는 존재할 때만)
           rows = ["| 번호 | 링크 | 메모 |", "|---:|:---|:---|"]
           for n in nums:
-              pad = f"{n:05d}"
-              code = f"src/main/java/boj/p{n}/Main.java"
-              doc_md = pathlib.Path(f"docs/problems/{pad}.md")
-              links = []
-              if doc_md.exists():
-                  links.append(f"[문서](https://v4n1lla.github.io/boj-java/problems/{pad}/)")
-              links.append(f"[코드]({code})")
-              rows.append(f"| {pad} | {' / '.join(links)} |  |")
+            pad = f"{n:05d}"
+            code = f"src/main/java/boj/p{n}/Main.java"
+            doc_md = pathlib.Path(f"docs/problems/{pad}.md")
+            links = []
+            if doc_md.exists():
+              links.append(f"[문서](https://v4n1lla.github.io/boj-java/problems/{pad}/)")
+            links.append(f"[코드]({code})")
+            rows.append(f"| {pad} | {' / '.join(links)} |  |")
           table = "\n".join(rows) + "\n"
           pathlib.Path("problem_table.md").write_text(table, encoding="utf-8")
 
-          # mkdocs.yml NAV 자동 치환
-          mk = pathlib.Path("mkdocs.yml").read_text(encoding="utf-8")
+          # mkdocs.yml NAV 자동 치환 (PROBLEM_NAV 블록만)
+          mk_path = pathlib.Path("mkdocs.yml")
+          mk = mk_path.read_text(encoding="utf-8")
           start = "# PROBLEM_NAV:START"
           end   = "# PROBLEM_NAV:END"
-          import re
           pat = re.compile(rf"({re.escape(start)})(.*?)({re.escape(end)})", re.S)
 
-          # 문서가 존재하는 문제만 NAV 라인 생성
           nav_lines = []
           for n in nums:
-              pad = f"{n:05d}"
-              if pathlib.Path(f"docs/problems/{pad}.md").exists():
-                  nav_lines.append(f"      - BOJ {pad}: problems/{pad}.md")
+            pad = f"{n:05d}"
+            if pathlib.Path(f"docs/problems/{pad}.md").exists():
+              nav_lines.append(f"      - BOJ {pad}: problems/{pad}.md")
           if not nav_lines:
-              nav_lines = ["      # (문서 스텁이 없습니다)"]
+            nav_lines = ["      # (문서 스텁이 없습니다)"]
 
           if pat.search(mk):
-              block = "\n".join([start] + nav_lines + [end])
-              mk2 = pat.sub(block, mk)
-              if mk2 != mk:
-                  pathlib.Path("mkdocs.yml").write_text(mk2, encoding="utf-8")
-                  print("NAV_UPDATED")
+            block = "\n".join([start] + nav_lines + [end])
+            mk2 = pat.sub(block, mk)
+            if mk2 != mk:
+              mk_path.write_text(mk2, encoding="utf-8")
+              print("NAV_UPDATED")
 
-          # 출력 파일 경로를 GITHUB_OUTPUT로 전달
+          # GITHUB_OUTPUT로 표 경로 전달
           with open(os.environ["GITHUB_OUTPUT"], "a") as gh:
-              gh.write(f"table_path=problem_table.md\n")
+            gh.write(f"table_path=problem_table.md\n")
           PY
 
       - name: Update README (marker replace)
@@ -83,9 +90,9 @@ jobs:
         run: |
           RESULT=$(python3 scripts/update_readme.py < "${{ steps.gen.outputs.table_path }}")
           echo "result=$RESULT" >> "$GITHUB_OUTPUT"
-          echo "Python said: $RESULT"
+          echo "update_readme.py said: $RESULT"
 
-      - name: Commit & push if changed
+      - name: Commit & push if changed (rebase + stash + retry)
         env:
           REF_NAME: ${{ github.ref_name }}
         run: |
@@ -99,23 +106,35 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # 최신 원격 반영 후 스테이징
           git fetch origin "$REF_NAME"
-          git rebase "origin/$REF_NAME" || git rebase --abort
 
+          # 작업트리 변경 잠시 보관 (rebase 대비)
+          git stash push -u -m "ci-readme-sync-autostash" || true
+
+          # 최신으로 맞추기
+          git rebase "origin/$REF_NAME" || { git rebase --abort || true; }
+
+          # 변경 복원(없으면 그대로 통과)
+          git stash pop || true
+
+          # 타깃 파일만 스테이징
           git add README.md mkdocs.yml problem_table.md || true
+
+          # 스테이징 없으면 종료
           if git diff --cached --quiet; then
             echo "No staged changes for target files."; exit 0
           fi
 
-          # 푸시 재시도(경합 대비)
+          # 푸시 재시도(경합 대비 3회)
           for i in 1 2 3; do
             if git push origin "HEAD:$REF_NAME"; then
               echo "Pushed."; exit 0
             fi
             echo "Push failed (#$i). Rebasing and retrying..."
             git fetch origin "$REF_NAME"
-            git rebase "origin/$REF_NAME" || git rebase --abort
+            git stash push -u -m "ci-readme-sync-retry-$i" || true
+            git rebase "origin/$REF_NAME" || { git rebase --abort || true; }
+            git stash pop || true
             sleep 2
           done
 
