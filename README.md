@@ -2,10 +2,9 @@
 
 백준(BOJ) & solved.ac 문제 풀이 저장소 – Java 17 기반
 
-[![ci](https://github.com/v4n1lla/boj-java/actions/workflows/ci.yml/badge.svg)](https://github.com/v4n1lla/boj-java/actions/workflows/ci.yml)
-[![readme-sync](https://github.com/v4n1lla/boj-java/actions/workflows/readme-sync.yml/badge.svg)](https://github.com/v4n1lla/boj-java/actions/workflows/readme-sync.yml)
-[![docs](https://github.com/V4N1LLA/boj-java/actions/workflows/pages.yml/badge.svg?branch=main&event=push)](https://github.com/V4N1LLA/boj-java/actions/workflows/pages.yml)
-
+[![Java Build & Test](https://github.com/V4N1LLA/boj-java/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/V4N1LLA/boj-java/actions/workflows/ci.yml)
+[![README Stats Sync](https://github.com/V4N1LLA/boj-java/actions/workflows/readme-sync.yml/badge.svg?branch=main)](https://github.com/V4N1LLA/boj-java/actions/workflows/readme-sync.yml)
+[![Docs Build & Deploy](https://github.com/V4N1LLA/boj-java/actions/workflows/pages.yml/badge.svg?branch=main)](https://github.com/V4N1LLA/boj-java/actions/workflows/pages.yml)
 
 ---
 
