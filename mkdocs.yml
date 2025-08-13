@@ -6,24 +6,53 @@ repo_url: https://github.com/V4N1LLA/boj-java
 repo_name: V4N1LLA/boj-java
 edit_uri: edit/main/docs/
 
+# 빌드 품질 강화 (워크플로우에서도 --strict 사용 중)
+strict: true
+use_directory_urls: true
+
 theme:
   name: material
   language: ko
   features:
+    # 내비게이션/레이아웃
     - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
     - navigation.sections
     - navigation.top
+    - navigation.footer
+    # 코드/문서 액션
     - content.code.copy
+    - content.code.annotate
     - content.action.edit
     - content.action.view
+    # 기타
+    - toc.follow
   palette:
     - scheme: slate
       primary: blue
       accent: indigo
+  icon:
+    repo: fontawesome/brands/github
+
+# (선택) 커스텀 스타일을 쓰려면 주석 해제 후 파일 추가
+# extra_css:
+#   - stylesheets/extra.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/V4N1LLA
+      name: GitHub
+    - icon: material/school
+      link: https://solved.ac/v4n1ll4
+      name: solved.ac
 
 nav:
   - 소개: index.md
   - 학습 계획: study-plan.md
+  - 실전 루틴: practice-routine.md
+  - 연습 문제 세트: practice-sets.md
   - 템플릿:
       - Java 입출력 템플릿: snippets/java-io-template.md
   - 알고리즘:
@@ -31,19 +60,38 @@ nav:
       - 이분 탐색: algorithms/binary-search.md
       - DFS/BFS: algorithms/bfs-dfs.md
   - 문제 메모:
-      - BOJ 1920: problems/01920.md
+      # PROBLEM_NAV:START
+      - BOJ 01920: problems/01920.md
+      # PROBLEM_NAV:END
 
 plugins:
   - search
   - git-revision-date-localized:
       fallback_to_build_date: true
+      type: date
+      timezone: Asia/Seoul
+      locale: ko
   - minify:
       minify_html: true
 
 markdown_extensions:
+  # 기본
   - admonition
   - footnotes
+  - attr_list
+  - def_list
+  - md_in_html
   - toc:
       permalink: true
+  # pymdownx (Material 권장 세트)
   - pymdownx.details
   - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.highlight:
+      anchor_linenums: true
+      linenums: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
