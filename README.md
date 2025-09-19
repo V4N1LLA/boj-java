@@ -105,6 +105,3 @@ scripts/
 - [solved.ac](https://solved.ac/)
 
 ---
-
-## 🏅 solved.ac 프로필
-[![Solved.ac Profile](http://mazassumnida.wtf/api/v2/generate_badge?boj=v4n1ll4)](https://solved.ac/v4n1ll4/)
